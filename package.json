@@ -7,14 +7,16 @@
     "node": ">=22.22.0"
   },
   "scripts": {
-    "test": "node --experimental-strip-types --test test/price.test.ts test/paid-guard.test.ts test/classify.test.ts test/reservation.test.ts test/decide.test.ts test/fault-server.test.ts test/config.test.ts test/cli.test.ts test/events.test.ts",
+    "test": "node --experimental-strip-types --test test/price.test.ts test/paid-guard.test.ts test/classify.test.ts test/reservation.test.ts test/decide.test.ts test/fault-server.test.ts test/config.test.ts test/cli.test.ts test/events.test.ts test/docker-host.test.ts",
     "fault-provider": "node --experimental-strip-types src/fault-provider/server.ts",
     "dry-run": "node --experimental-strip-types src/runner/cli.ts dry-run",
     "lane-f": "node --experimental-strip-types src/runner/cli.ts lane-f",
     "repro-429": "node --experimental-strip-types scripts/repro.ts 429",
+    "repro-500": "node --experimental-strip-types scripts/repro.ts 500",
     "repro-cache": "node --experimental-strip-types scripts/repro.ts cache",
     "repro-stampede": "node --experimental-strip-types scripts/repro.ts stampede",
     "lane-p": "node --experimental-strip-types src/runner/cli.ts lane-p",
-    "bootstrap-keys": "node --experimental-strip-types scripts/bootstrap-keys.ts"
+    "bootstrap-keys": "node --experimental-strip-types scripts/bootstrap-keys.ts",
+    "compose": "node --experimental-strip-types scripts/compose.ts"
   }
 }

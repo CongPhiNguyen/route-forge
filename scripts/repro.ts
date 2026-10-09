@@ -15,8 +15,8 @@ interface Keys {
 }
 
 async function main(): Promise<void> {
-  if (mode !== "429" && mode !== "cache" && mode !== "stampede") {
-    throw new Error("usage: scripts/repro.ts 429|cache|stampede");
+  if (mode !== "429" && mode !== "500" && mode !== "cache" && mode !== "stampede") {
+    throw new Error("usage: scripts/repro.ts 429|500|cache|stampede");
   }
   const keys = JSON.parse(readFileSync(path.join(repoRoot(), ".secrets", "keys.json"), "utf8")) as Keys;
   await drain();
@@ -24,6 +24,7 @@ async function main(): Promise<void> {
   const reset = await fetch(`${fault}/_reset`, { method: "POST" });
   if (!reset.ok) throw new Error(`reset ${reset.status}: ${await reset.text()}`);
   if (mode === "429") await run429(keys["f-exact"]);
+  if (mode === "500") await run500(keys["f-exact"]);
   if (mode === "cache") await runCache(keys);
   if (mode === "stampede") await runStampede(keys["f-exact"]);
 }
@@ -43,6 +44,22 @@ async function run429(key: string): Promise<void> {
   );
   if (response.status !== 429 || count.primary !== 3 || count.fallback !== 0 || count.late !== 0) {
     throw new Error("single 429 did not make exactly 3 primary arrivals");
+  }
+}
+
+async function run500(key: string): Promise<void> {
+  await control("500");
+  const id = `${runId}-500`;
+  const started = Date.now();
+  const response = await chat(key, "lab-chat", id, `${runId} one 500`, false);
+  await finished(id, new Date().toISOString());
+  const events = await eventsFor(id);
+  const count = accountAttempts(events, id);
+  process.stdout.write(
+    `status=${response.status} latency_ms=${Date.now() - started} primary=${count.primary} fallback=${count.fallback} late=${count.late}\n${formatTimeline(events, id)}\n`,
+  );
+  if (response.status !== 200 || count.primary !== 3 || count.fallback !== 1 || count.late !== 0) {
+    throw new Error("single 500 did not make 3 primary arrivals and 1 fallback arrival");
   }
 }
 

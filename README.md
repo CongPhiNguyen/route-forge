@@ -17,10 +17,10 @@ Digests are in `config/image-pins.json` and `docker-compose.yml`. Node on the ho
 
 ## Start
 
-From the repo root, with Docker available:
+From the repo root. `ROUTEFORGE_DOCKER` in `.env` chooses the engine: `wsl` runs Compose inside `ROUTEFORGE_WSL_DISTRO` (default `Ubuntu`), and `windows` uses `docker` on the Windows PATH. A shell variable overrides the file for one command.
 
 ```powershell
-docker compose up -d --build
+npm run compose -- up -d --build
 npm run bootstrap-keys
 npm test
 npm run lane-f
@@ -31,14 +31,6 @@ npm run lane-f
 Bootstrap talks only to the local proxy. It writes `.secrets/keys.json` (gitignored) for `f-nocache`, `f-exact`, `f-budget`, `p-nocache`, and `p-exact`. `f-budget` is updated so `spend` is already above `max_budget`.
 
 Lane F listens on `http://127.0.0.1:4000`. The fault provider listens on `http://127.0.0.1:8080`. Redis is DB 0. Lane P would use Redis DB 1 and is not started.
-
-If Docker is the engine inside WSL rather than on the Windows PATH:
-
-```powershell
-wsl -d Ubuntu -- bash -lc "cd /mnt/c/phi-nguyen/route-forge && docker compose up -d --build"
-npm run bootstrap-keys
-npm run lane-f
-```
 
 ## What Lane F checks
 
@@ -53,7 +45,7 @@ npm run lane-f
 
 The report is `artifacts/<run_id>/report.md` plus `requests.jsonl`. `billable_usd` is 0. `synthetic_usd` is not added to a paid total.
 
-A hit is never inferred from replayed `usage`. The runner requires the cache-key header and a zero attempt delta together.
+A hit is never inferred from replayed `usage`. The runner requires the cache-key header and zero fault-provider events for that logical request id.
 
 ## Config conflict recorded for v1.104.2
 
@@ -62,6 +54,16 @@ Details are in [docs/plan/litellm-v1.104.2-validation.md](docs/plan/litellm-v1.1
 - Exact Redis cache keys do not include the virtual key. Cache opt-in is the request field `cache.use-cache` because the proxy cache mode is `default_off`.
 - Two deployments under one `model_name` are load-balanced. Lane F uses model group `lab-chat` with fallback group `lab-chat-fallback`. `fault-429` calls `lab-chat-retry`, which has no fallback, so the client stays on 429.
 - Router `allowed_fails` stays 2, matching ADR 005. Each measured deployment sets `model_info.allowed_fails: 1000` so a 20-call window measures the retry loop instead of cooling the only primary off the rotation. The report prints both numbers.
+- Each deployment sets `max_retries: 0`. Without that, the OpenAI handler defaults to 2 and retries inside each router attempt. `num_retries: 2` stays on the router only, so a failing primary is 3 upstream calls.
+
+One-request checks, with the stack already up:
+
+```powershell
+npm run repro-429
+npm run repro-500
+npm run repro-cache
+npm run repro-stampede
+```
 
 ## Direct fault provider
 
@@ -70,7 +72,7 @@ curl.exe -D - http://127.0.0.1:8080/v1/chat/completions -H "content-type: applic
 curl.exe http://127.0.0.1:8080/_stats
 ```
 
-`POST /_control` with `{"scenario":"500","latency_ms":0}` sets the mode used when the proxy does not forward the scenario header. `GET /_stats` is keyed by `x-routeforge-request-id`.
+`POST /_control` with `{"scenario":"500","latency_ms":0}` sets the mode used when the proxy does not forward the scenario header. `GET /_events` is the append-only arrival log. `POST /_reset` returns 409 while an upstream call is still open.
 
 ## Paid lane
 

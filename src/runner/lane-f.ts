@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { amplification, classifyGatewayCache } from "./classify.ts";
+import { dockerComposeInvocation } from "./docker-host.ts";
 import { sha256File, sha256Text } from "./hash.ts";
 import { loadManifest, manifestPath, type Manifest } from "./manifest.ts";
 import { repoRoot } from "./paths.ts";
@@ -634,9 +635,14 @@ function gitCommit(root: string): string {
 }
 
 function dockerComposeConfig(root: string): string {
-  const result = spawnSync("docker", ["compose", "config"], { cwd: root, encoding: "utf8" });
+  const invocation = dockerComposeInvocation(root, ["config"]);
+  const result = spawnSync(invocation.command, invocation.args, {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
   if (result.status !== 0) {
-    return `docker compose config unavailable\n${result.stderr || result.stdout || "docker not on PATH"}`;
+    return `docker compose config unavailable\n${result.stderr || result.stdout || result.error?.message || "docker not on PATH"}`;
   }
   return result.stdout;
 }
