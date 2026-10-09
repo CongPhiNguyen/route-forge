@@ -1,5 +1,6 @@
 {
   "name": "route-forge",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "engines": {
