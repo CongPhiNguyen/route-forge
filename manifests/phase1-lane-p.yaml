@@ -16,7 +16,7 @@ limits:
   account_target_usd: 5.00
 proxy:
   config_path: config/litellm-lane-p.yaml
-  config_sha256: 936d15c53a98c2276210ed3291f36e1d8c3074bb5163c5351f533bdbb9f3535c
+  config_sha256: f5a3a44394872c1e762ec21cf7918523995ce03e22aeeef4d0137198ae3c7ebf
   num_retries: 0
   request_timeout_seconds: 30
   allowed_fails: 2

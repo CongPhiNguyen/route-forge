@@ -48,6 +48,12 @@ export function estimateReservationUsd(
   return (inputTokens * model.input_per_million + maxOutputTokens * model.output_per_million) / 1_000_000;
 }
 
+export function incrementalProviderUsd(gatewayCache: "hit" | "miss" | "bypass", usageUsd: number): number {
+  if (gatewayCache === "hit") return 0;
+  if (!Number.isFinite(usageUsd) || usageUsd < 0) throw new Error("usageUsd must be a non-negative finite number");
+  return usageUsd;
+}
+
 export function priceUsageUsd(
   card: PriceCard,
   modelId: string,

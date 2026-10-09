@@ -39,6 +39,13 @@ test("Lane F and Lane P configs match their manifest hashes and cannot be mixed"
   assert.equal(p.containsOpenAiHost, true);
   assert.equal(p.containsFaultProvider, false);
   assert.equal(p.redisDb, 1);
+  assert.deepEqual(p.deploymentMaxRetries, [0]);
+  assert.equal(p.disablesBudgetReservation, false);
+  assert.equal(p.allowsRequestsOnDbUnavailable, false);
+  assert.equal(p.disablesFallbackBudget, false);
+  assert.equal(p.cacheMode, "default_off");
+  assert.equal(p.storePrompts, false);
+  assert.equal(p.semanticCacheConfigured, false);
 });
 
 test("compose image references match the pin file", () => {

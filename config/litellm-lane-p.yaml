@@ -8,6 +8,9 @@ model_list:
       model: openai/gpt-4.1-mini-2025-04-14
       api_key: os.environ/OPENAI_API_KEY
       timeout: 30
+      # Router num_retries does not clear the OpenAI client default of 2.
+      # See docs/plan/litellm-v1.104.2-validation.md.
+      max_retries: 0
     model_info:
       id: lane-p-openai
       base_model: gpt-4.1-mini-2025-04-14

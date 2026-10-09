@@ -14,6 +14,7 @@ export interface PaidLaneProfile {
   deploymentCount: number;
   fallbackCount: number;
   containsOpenAiHost: boolean;
+  deploymentMaxRetries: number[];
 }
 
 const LANE_P_NOT_IN_SLICE = "Lane P execution is not part of this slice";
@@ -27,7 +28,10 @@ export function assertPaidLane(profile: PaidLaneProfile): void {
     throw new PaidDeniedError("Lane P config hash does not match the manifest");
   }
   const retriesOk = profile.numRetries.length > 0 && profile.numRetries.every((value) => value === 0);
-  if (!retriesOk || profile.deploymentCount !== 1 || profile.fallbackCount !== 0) {
+  const sdkRetriesOk =
+    profile.deploymentMaxRetries.length === profile.deploymentCount &&
+    profile.deploymentMaxRetries.every((value) => value === 0);
+  if (!retriesOk || !sdkRetriesOk || profile.deploymentCount !== 1 || profile.fallbackCount !== 0) {
     throw new PaidDeniedError("Lane P config is not the locked single-deployment profile");
   }
   if (!profile.containsOpenAiHost) {

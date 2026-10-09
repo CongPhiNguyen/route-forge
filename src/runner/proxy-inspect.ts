@@ -11,6 +11,10 @@ export interface ProxyInspection {
   containsOpenAiHost: boolean;
   containsFaultProvider: boolean;
   redisDb: number | null;
+  deploymentMaxRetries: number[];
+  disablesBudgetReservation: boolean;
+  allowsRequestsOnDbUnavailable: boolean;
+  disablesFallbackBudget: boolean;
 }
 
 export function inspectProxyConfig(text: string): ProxyInspection {
@@ -44,5 +48,9 @@ export function inspectProxyConfig(text: string): ProxyInspection {
     containsOpenAiHost: code.includes("api.openai.com") || /api_key:\s*os\.environ\/OPENAI_API_KEY/.test(code),
     containsFaultProvider: code.includes("fault-provider"),
     redisDb: redisDb ? Number(redisDb[1]) : null,
+    deploymentMaxRetries: [...code.matchAll(/max_retries:\s*(\d+)/g)].map((match) => Number(match[1])),
+    disablesBudgetReservation: /disable_budget_reservation:\s*true/.test(code),
+    allowsRequestsOnDbUnavailable: /allow_requests_on_db_unavailable:\s*true/.test(code),
+    disablesFallbackBudget: /enforce_fallback_budget:\s*false/.test(code),
   };
 }

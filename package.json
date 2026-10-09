@@ -7,7 +7,7 @@
     "node": ">=22.22.0"
   },
   "scripts": {
-    "test": "node --experimental-strip-types --test test/price.test.ts test/paid-guard.test.ts test/classify.test.ts test/reservation.test.ts test/decide.test.ts test/fault-server.test.ts test/config.test.ts test/cli.test.ts test/events.test.ts test/docker-host.test.ts",
+    "test": "node --experimental-strip-types --test test/price.test.ts test/paid-guard.test.ts test/classify.test.ts test/reservation.test.ts test/decide.test.ts test/fault-server.test.ts test/config.test.ts test/cli.test.ts test/events.test.ts test/docker-host.test.ts test/lane-p-guardrails.test.ts",
     "fault-provider": "node --experimental-strip-types src/fault-provider/server.ts",
     "dry-run": "node --experimental-strip-types src/runner/cli.ts dry-run",
     "lane-f": "node --experimental-strip-types src/runner/cli.ts lane-f",

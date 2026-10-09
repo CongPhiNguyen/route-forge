@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import path from "node:path";
-import { InactiveModelError, assertModelActive, estimateReservationUsd, loadPriceCard, priceUsageUsd } from "../src/runner/price.ts";
+import { InactiveModelError, assertModelActive, estimateReservationUsd, incrementalProviderUsd, loadPriceCard, priceUsageUsd } from "../src/runner/price.ts";
 import { repoRoot } from "../src/runner/paths.ts";
 
 const card = loadPriceCard(path.join(repoRoot(), "prices", "openai-standard-2026-10-10.json"));
@@ -24,4 +24,6 @@ test("usage price splits cached input and does not bill a gateway hit by itself"
     completion_tokens: 4,
   });
   assert.ok(Math.abs(priced - (12 * 0.4 + 4 * 1.6) / 1_000_000) < 1e-12);
+  assert.equal(incrementalProviderUsd("hit", priced), 0);
+  assert.equal(incrementalProviderUsd("miss", priced), priced);
 });

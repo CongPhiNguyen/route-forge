@@ -10,6 +10,7 @@ const matching = {
   deploymentCount: 1,
   fallbackCount: 0,
   containsOpenAiHost: true,
+  deploymentMaxRetries: [0],
 };
 
 test("paid-provider configuration is blocked when ROUTEFORGE_ALLOW_PAID is absent", () => {
@@ -28,4 +29,15 @@ test("paid lane rejects a config hash that does not match the manifest", () => {
 
 test("a matching paid flag still does not start Lane P in this slice", () => {
   assert.throws(() => assertPaidLane({ ...matching, allowPaid: "1" }), /not part of this slice/);
+});
+
+test("a paid profile without deployment max_retries 0 is denied", () => {
+  assert.throws(
+    () => assertPaidLane({ ...matching, allowPaid: "1", deploymentMaxRetries: [] }),
+    /locked single-deployment profile/,
+  );
+  assert.throws(
+    () => assertPaidLane({ ...matching, allowPaid: "1", deploymentMaxRetries: [2] }),
+    /locked single-deployment profile/,
+  );
 });
