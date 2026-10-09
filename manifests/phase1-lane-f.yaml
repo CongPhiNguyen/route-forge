@@ -1,0 +1,26 @@
+schema_version: 1
+experiment_id: phase1-lane-f
+lane: F
+seed: 20261010
+model_id: gpt-4.1-mini-2025-04-14
+inactive_models: [gpt-5-nano]
+price_card_id: openai-standard-2026-10-10
+price_card_path: prices/openai-standard-2026-10-10.json
+fixture_id: lane-f-fixed
+concurrency: 1
+temperature: 0
+max_output_tokens: 64
+limits:
+  max_requests: 80
+  max_estimated_usd: 1.50
+  account_target_usd: 5.00
+proxy:
+  config_path: config/litellm-lane-f.yaml
+  config_sha256: 956fa88622fcea6e4b820ff82615426e51d9f82ea0735ec1c464939a4f634acd
+  num_retries: 2
+  request_timeout_seconds: 2
+  allowed_fails: 2
+  effective_deployment_allowed_fails: 1000
+  cooldown_time_seconds: 30
+  fallbacks: [lab-chat-fallback]
+scenarios: [exact-cache-repeat, fault-429, fault-500, fault-timeout, fault-stampede, fault-budget]

@@ -1,0 +1,98 @@
+# Local Lane F stack. One proxy replica. Lane P is a config file only.
+# Image digests match config/image-pins.json (resolved 2026-10-10).
+
+name: routeforge
+
+services:
+  postgres:
+    image: postgres:16.11-alpine@sha256:4327b9fd295502f326f44153a1045a7170ddbfffed1c3829798328556cfd09e2
+    environment:
+      POSTGRES_USER: routeforge
+      POSTGRES_PASSWORD: routeforge
+      POSTGRES_DB: routeforge
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U routeforge -d routeforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - routeforge-postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4.7-alpine@sha256:02f2cc4882f8bf87c79a220ac958f58c700bdec0dfb9b9ea61b62fb0e8f1bfcf
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - routeforge-redis:/data
+    restart: unless-stopped
+
+  fault-provider:
+    build:
+      context: .
+      dockerfile: Dockerfile.fault-provider
+    image: routeforge-fault-provider:local
+    environment:
+      PORT: "8080"
+      ROUTEFORGE_TIMEOUT_MS: "5000"
+      ROUTEFORGE_STAMPEDE_MS: "200"
+      ROUTEFORGE_LATENCY_MS: "0"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8080/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  litellm:
+    image: ghcr.io/berriai/litellm:v1.104.2@sha256:3d88bd757134a00e8c00237b85a021ab1f6d54abb9c1df750f411dbe7256a500
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--num_workers", "1"]
+    environment:
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-routeforge-local-master}
+      DATABASE_URL: postgresql://routeforge:routeforge@postgres:5432/routeforge
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      FAULT_API_KEY: ${FAULT_API_KEY:-sk-fault-local}
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./config/litellm-lane-f.yaml:/app/config.yaml:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      fault-provider:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+    restart: unless-stopped
+
+volumes:
+  routeforge-postgres:
+  routeforge-redis:

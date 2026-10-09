@@ -1,0 +1,42 @@
+schema_version: 1
+experiment_id: phase1-three-arms
+lane: P
+seed: 20261010
+model_id: gpt-4.1-mini-2025-04-14
+inactive_models: [gpt-5-nano]
+price_card_id: openai-standard-2026-10-10
+price_card_path: prices/openai-standard-2026-10-10.json
+fixture_id: qa-v1
+concurrency: 1
+temperature: 0
+max_output_tokens: 64
+limits:
+  max_requests: 80
+  max_estimated_usd: 1.50
+  account_target_usd: 5.00
+proxy:
+  config_path: config/litellm-lane-p.yaml
+  config_sha256: 936d15c53a98c2276210ed3291f36e1d8c3074bb5163c5351f533bdbb9f3535c
+  num_retries: 0
+  request_timeout_seconds: 30
+  allowed_fails: 2
+  effective_deployment_allowed_fails: 0
+  cooldown_time_seconds: 30
+  fallbacks: []
+arms:
+  - id: A-baseline
+    key_alias: p-nocache
+    prefix_mode: unique_nonce
+    prompt_cache_key_mode: unique
+  - id: B-provider-cache
+    key_alias: p-nocache
+    prefix_mode: stable
+    prompt_cache_key: routeforge-phase1
+    calls_per_item: [warmup, steady]
+    diagnostics: [broken_prefix]
+  - id: C-gateway-exact
+    key_alias: p-exact
+    prefix_mode: stable
+    prompt_cache_key: routeforge-phase1
+    calls_per_item: [miss, exact_repeat]
+    paraphrases: 4

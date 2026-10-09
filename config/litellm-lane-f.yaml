@@ -1,0 +1,74 @@
+# Lane F. Stock LiteLLM Proxy v1.104.2. No semantic cache.
+# Model groups are split on purpose. See docs/plan/litellm-v1.104.2-validation.md.
+# Router allowed_fails stays 2. Measured deployments set model_info.allowed_fails
+# to 1000 so a 20-call window measures retries instead of cooling the deployment.
+
+model_list:
+  - model_name: lab-chat
+    litellm_params:
+      model: openai/gpt-4.1-mini-2025-04-14
+      api_base: http://fault-provider:8080/v1
+      api_key: os.environ/FAULT_API_KEY
+      timeout: 2
+      max_retries: 0
+      extra_headers:
+        x-routeforge-role: primary
+    model_info:
+      id: lane-f-primary
+      base_model: gpt-4.1-mini-2025-04-14
+      allowed_fails: 1000
+  - model_name: lab-chat-fallback
+    litellm_params:
+      model: openai/gpt-4.1-mini-2025-04-14
+      api_base: http://fault-provider:8080/v1
+      api_key: os.environ/FAULT_API_KEY
+      timeout: 30
+      max_retries: 0
+      extra_headers:
+        x-routeforge-role: fallback
+    model_info:
+      id: lane-f-fallback
+      base_model: gpt-4.1-mini-2025-04-14
+      allowed_fails: 1000
+  - model_name: lab-chat-retry
+    litellm_params:
+      model: openai/gpt-4.1-mini-2025-04-14
+      api_base: http://fault-provider:8080/v1
+      api_key: os.environ/FAULT_API_KEY
+      timeout: 30
+      max_retries: 0
+      extra_headers:
+        x-routeforge-role: primary
+    model_info:
+      id: lane-f-retry
+      base_model: gpt-4.1-mini-2025-04-14
+      allowed_fails: 1000
+
+router_settings:
+  routing_strategy: simple-shuffle
+  num_retries: 2
+  allowed_fails: 2
+  cooldown_time: 30
+  fallbacks:
+    - lab-chat:
+        - lab-chat-fallback
+
+litellm_settings:
+  cache: true
+  cache_params:
+    type: redis
+    host: redis
+    port: 6379
+    db: 0
+    mode: default_off
+    namespace: routeforge-lane-f
+    ttl: 3600
+  drop_params: true
+  store_prompts_in_spend_logs: false
+  request_timeout: 30
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL
+  forward_client_headers_to_llm_api: true
+  store_model_in_db: false
